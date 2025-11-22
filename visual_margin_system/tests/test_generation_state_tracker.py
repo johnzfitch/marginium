@@ -2,7 +2,6 @@
 Tests for GenerationStateTracker
 """
 
-import pytest
 from visual_margin_system.generation_state_tracker import GenerationStateTracker
 
 
