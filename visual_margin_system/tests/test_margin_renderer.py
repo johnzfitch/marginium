@@ -108,11 +108,6 @@ class TestMarginRenderer:
         """Test constraint color selection based on status."""
         renderer = MarginRenderer()
 
-        state_satisfied = {
-            'line_count': 4,
-            'paragraph_count': 2,
-            'total_words': 100,
-        }
 
         state_warning = {
             'line_count': 3,
