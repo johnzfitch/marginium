@@ -120,7 +120,7 @@ class VisualMarginGenerator:
 
             except Exception as e:
                 # Handle API errors gracefully
-                logger.error(f"Error during generation: {e}")
+                logger.error(f"Error during generation in generate_with_margin (iteration {iteration}): {e}", exc_info=True)
                 break
 
             iteration += 1
@@ -209,7 +209,7 @@ class VisualMarginGenerator:
 
             except Exception as e:
                 # Handle API errors gracefully
-                logger.error(f"Error during generation: {e}")
+                logger.error(f"Error during generation in generate_with_margin_async (iteration {iteration}): {e}", exc_info=True)
                 break
 
             iteration += 1
