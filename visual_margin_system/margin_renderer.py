@@ -108,7 +108,7 @@ class MarginRenderer:
             y_offset += 10
 
         # Render metrics section
-        y_offset = self._render_metrics_section(draw, state, y_offset)
+        self._render_metrics_section(draw, state, y_offset)
 
         return image
 
