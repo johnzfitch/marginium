@@ -13,6 +13,10 @@ from .generation_state_tracker import GenerationStateTracker
 from .margin_renderer import MarginRenderer
 from .constraint_parser import ConstraintParser
 
+# Token estimation constant for fallback when API doesn't provide usage stats
+# Modern tokenizers typically produce 1.3-1.5 tokens per word for English text
+TOKENS_PER_WORD_ESTIMATE = 1.33
+
 
 class VisualMarginGenerator:
     """Orchestrates text generation with visual margin state tracking."""
@@ -114,9 +118,9 @@ class VisualMarginGenerator:
                     # Update tracker with new content
                     self.tracker.update_with_token(chunk)
                     
-                    # Deduct tokens from remaining budget
+                    # Deduct tokens from remaining budget (prevent negative)
                     tokens_used = self._estimate_token_usage(response, chunk)
-                    remaining_tokens -= tokens_used
+                    remaining_tokens = max(0, remaining_tokens - tokens_used)
                 else:
                     # No more content generated
                     break
@@ -207,9 +211,9 @@ class VisualMarginGenerator:
                     # Update tracker with new content
                     self.tracker.update_with_token(chunk)
                     
-                    # Deduct tokens from remaining budget
+                    # Deduct tokens from remaining budget (prevent negative)
                     tokens_used = self._estimate_token_usage(response, chunk)
-                    remaining_tokens -= tokens_used
+                    remaining_tokens = max(0, remaining_tokens - tokens_used)
                 else:
                     # No more content generated
                     break
@@ -300,10 +304,9 @@ Generate text while monitoring the margin to ensure you satisfy all constraints.
         if hasattr(response, 'usage') and hasattr(response.usage, 'output_tokens'):
             return response.usage.output_tokens
         
-        # Fallback: estimate based on word count
-        # Modern tokenizers typically produce 1.3-1.5 tokens per word for English text
+        # Fallback: estimate based on word count using configured constant
         word_count = len(chunk.split())
-        return int(word_count * 1.33)
+        return int(word_count * TOKENS_PER_WORD_ESTIMATE)
 
     def get_state_snapshot(self) -> Dict[str, Any]:
         """
