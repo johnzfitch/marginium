@@ -5,7 +5,6 @@ Orchestrates the generation loop with margin awareness, combining
 state tracking, rendering, and multimodal LLM integration.
 """
 
-import asyncio
 from typing import Dict, Any, Optional, List
 from anthropic import Anthropic, AsyncAnthropic
 
