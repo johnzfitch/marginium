@@ -6,12 +6,15 @@ state tracking, rendering, and multimodal LLM integration.
 """
 
 import asyncio
+import logging
 from typing import Dict, Any, Optional, List
 from anthropic import Anthropic, AsyncAnthropic
 
 from .generation_state_tracker import GenerationStateTracker
 from .margin_renderer import MarginRenderer
 from .constraint_parser import ConstraintParser
+
+logger = logging.getLogger(__name__)
 
 
 class VisualMarginGenerator:
@@ -117,7 +120,7 @@ class VisualMarginGenerator:
 
             except Exception as e:
                 # Handle API errors gracefully
-                print(f"Error during generation: {e}")
+                logger.error(f"Error during generation: {e}")
                 break
 
             iteration += 1
@@ -206,7 +209,7 @@ class VisualMarginGenerator:
 
             except Exception as e:
                 # Handle API errors gracefully
-                print(f"Error during generation: {e}")
+                logger.error(f"Error during generation: {e}")
                 break
 
             iteration += 1
