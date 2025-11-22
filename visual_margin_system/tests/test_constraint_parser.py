@@ -2,7 +2,6 @@
 Tests for ConstraintParser
 """
 
-import pytest
 from visual_margin_system.constraint_parser import ConstraintParser
 
 
