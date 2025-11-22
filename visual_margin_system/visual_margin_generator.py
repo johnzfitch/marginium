@@ -76,10 +76,9 @@ class VisualMarginGenerator:
         self.tracker.set_constraints(constraints)
 
         generated_text = ""
-        iteration = 0
-        max_iterations = (max_tokens // chunk_size) + 1
+        remaining_tokens = max_tokens
 
-        while iteration < max_iterations:
+        while remaining_tokens > 0:
             # Check if we've satisfied all constraints
             if constraints and self.tracker.is_complete():
                 break
@@ -97,10 +96,13 @@ class VisualMarginGenerator:
             )
 
             try:
+                # Determine how many tokens to request (don't exceed remaining budget)
+                tokens_to_request = min(chunk_size, remaining_tokens)
+                
                 # Call vision-language model
                 response = self.client.messages.create(
                     model=self.model,
-                    max_tokens=chunk_size,
+                    max_tokens=tokens_to_request,
                     messages=messages
                 )
 
@@ -111,6 +113,15 @@ class VisualMarginGenerator:
 
                     # Update tracker with new content
                     self.tracker.update_with_token(chunk)
+                    
+                    # Deduct tokens from remaining budget
+                    # Use the actual tokens returned if available, otherwise estimate
+                    if hasattr(response, 'usage') and hasattr(response.usage, 'output_tokens'):
+                        tokens_used = response.usage.output_tokens
+                    else:
+                        # Rough estimate: count tokens as words (conservative)
+                        tokens_used = len(chunk.split())
+                    remaining_tokens -= tokens_used
                 else:
                     # No more content generated
                     break
@@ -119,8 +130,6 @@ class VisualMarginGenerator:
                 # Handle API errors gracefully
                 print(f"Error during generation: {e}")
                 break
-
-            iteration += 1
 
         return generated_text
 
@@ -165,10 +174,9 @@ class VisualMarginGenerator:
         self.tracker.set_constraints(constraints)
 
         generated_text = ""
-        iteration = 0
-        max_iterations = (max_tokens // chunk_size) + 1
+        remaining_tokens = max_tokens
 
-        while iteration < max_iterations:
+        while remaining_tokens > 0:
             # Check if we've satisfied all constraints
             if constraints and self.tracker.is_complete():
                 break
@@ -186,10 +194,13 @@ class VisualMarginGenerator:
             )
 
             try:
+                # Determine how many tokens to request (don't exceed remaining budget)
+                tokens_to_request = min(chunk_size, remaining_tokens)
+                
                 # Call vision-language model
                 response = await self.async_client.messages.create(
                     model=self.model,
-                    max_tokens=chunk_size,
+                    max_tokens=tokens_to_request,
                     messages=messages
                 )
 
@@ -200,6 +211,15 @@ class VisualMarginGenerator:
 
                     # Update tracker with new content
                     self.tracker.update_with_token(chunk)
+                    
+                    # Deduct tokens from remaining budget
+                    # Use the actual tokens returned if available, otherwise estimate
+                    if hasattr(response, 'usage') and hasattr(response.usage, 'output_tokens'):
+                        tokens_used = response.usage.output_tokens
+                    else:
+                        # Rough estimate: count tokens as words (conservative)
+                        tokens_used = len(chunk.split())
+                    remaining_tokens -= tokens_used
                 else:
                     # No more content generated
                     break
@@ -208,8 +228,6 @@ class VisualMarginGenerator:
                 # Handle API errors gracefully
                 print(f"Error during generation: {e}")
                 break
-
-            iteration += 1
 
         return generated_text
 
