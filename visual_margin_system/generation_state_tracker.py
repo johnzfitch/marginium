@@ -6,7 +6,7 @@ line counts, paragraph counts, word counts, and constraint satisfaction status.
 """
 
 import re
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 
 
 class GenerationStateTracker:
