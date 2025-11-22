@@ -12,6 +12,10 @@ from .generation_state_tracker import GenerationStateTracker
 from .margin_renderer import MarginRenderer
 from .constraint_parser import ConstraintParser
 
+# Token estimation constant for fallback when API doesn't provide usage stats
+# Modern tokenizers typically produce 1.3-1.5 tokens per word for English text
+TOKENS_PER_WORD_ESTIMATE = 1.33
+
 
 class VisualMarginGenerator:
     """Orchestrates text generation with visual margin state tracking."""
@@ -75,10 +79,9 @@ class VisualMarginGenerator:
         self.tracker.set_constraints(constraints)
 
         generated_text = ""
-        iteration = 0
-        max_iterations = (max_tokens // chunk_size) + 1
+        remaining_tokens = max_tokens
 
-        while iteration < max_iterations:
+        while remaining_tokens > 0:
             # Check if we've satisfied all constraints
             if constraints and self.tracker.is_complete():
                 break
@@ -96,10 +99,13 @@ class VisualMarginGenerator:
             )
 
             try:
+                # Determine how many tokens to request (don't exceed remaining budget)
+                tokens_to_request = min(chunk_size, remaining_tokens)
+                
                 # Call vision-language model
                 response = self.client.messages.create(
                     model=self.model,
-                    max_tokens=chunk_size,
+                    max_tokens=tokens_to_request,
                     messages=messages
                 )
 
@@ -110,6 +116,14 @@ class VisualMarginGenerator:
 
                     # Update tracker with new content
                     self.tracker.update_with_token(chunk)
+                    
+                    # Deduct tokens from remaining budget (prevent negative)
+                    tokens_used = self._estimate_token_usage(response, chunk)
+                    # Defensive: ensure tokens_used does not exceed tokens_to_request
+                    if tokens_used > tokens_to_request:
+                        print(f"Warning: tokens_used ({tokens_used}) > tokens_to_request ({tokens_to_request}). Capping to {tokens_to_request}.")
+                        tokens_used = tokens_to_request
+                    remaining_tokens = max(0, remaining_tokens - tokens_used)
                 else:
                     # No more content generated
                     break
@@ -118,8 +132,6 @@ class VisualMarginGenerator:
                 # Handle API errors gracefully
                 print(f"Error during generation: {e}")
                 break
-
-            iteration += 1
 
         return generated_text
 
@@ -164,10 +176,9 @@ class VisualMarginGenerator:
         self.tracker.set_constraints(constraints)
 
         generated_text = ""
-        iteration = 0
-        max_iterations = (max_tokens // chunk_size) + 1
+        remaining_tokens = max_tokens
 
-        while iteration < max_iterations:
+        while remaining_tokens > 0:
             # Check if we've satisfied all constraints
             if constraints and self.tracker.is_complete():
                 break
@@ -185,10 +196,13 @@ class VisualMarginGenerator:
             )
 
             try:
+                # Determine how many tokens to request (don't exceed remaining budget)
+                tokens_to_request = min(chunk_size, remaining_tokens)
+                
                 # Call vision-language model
                 response = await self.async_client.messages.create(
                     model=self.model,
-                    max_tokens=chunk_size,
+                    max_tokens=tokens_to_request,
                     messages=messages
                 )
 
@@ -199,6 +213,14 @@ class VisualMarginGenerator:
 
                     # Update tracker with new content
                     self.tracker.update_with_token(chunk)
+                    
+                    # Deduct tokens from remaining budget (prevent negative)
+                    tokens_used = self._estimate_token_usage(response, chunk)
+                    # Defensive check: tokens_used should not exceed tokens_to_request
+                    if tokens_used > tokens_to_request:
+                        print(f"Warning: tokens_used ({tokens_used}) > tokens_to_request ({tokens_to_request}). Capping tokens_used to tokens_to_request.")
+                        tokens_used = tokens_to_request
+                    remaining_tokens = max(0, remaining_tokens - tokens_used)
                 else:
                     # No more content generated
                     break
@@ -207,8 +229,6 @@ class VisualMarginGenerator:
                 # Handle API errors gracefully
                 print(f"Error during generation: {e}")
                 break
-
-            iteration += 1
 
         return generated_text
 
@@ -275,6 +295,25 @@ Generate text while monitoring the margin to ensure you satisfy all constraints.
                 ]
             }
         ]
+
+    def _estimate_token_usage(self, response, chunk: str) -> int:
+        """
+        Estimate the number of tokens used in a response.
+        
+        Args:
+            response: API response object
+            chunk: Generated text chunk
+            
+        Returns:
+            Estimated token count
+        """
+        # Try to use actual token count from API response
+        if hasattr(response, 'usage') and hasattr(response.usage, 'output_tokens'):
+            return response.usage.output_tokens
+        
+        # Fallback: estimate based on word count using configured constant
+        word_count = len(chunk.split())
+        return int(word_count * TOKENS_PER_WORD_ESTIMATE)
 
     def get_state_snapshot(self) -> Dict[str, Any]:
         """
