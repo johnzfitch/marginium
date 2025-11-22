@@ -109,8 +109,9 @@ class VisualMarginGenerator:
                     chunk = response.content[0].text
                     generated_text += chunk
 
-                    # Update tracker with new content
-                    self.tracker.update_with_token(chunk)
+                    # Update tracker with new content and actual token count
+                    token_count = response.usage.output_tokens if response.usage else None
+                    self.tracker.update_with_token(chunk, token_count=token_count)
                 else:
                     # No more content generated
                     break
@@ -198,8 +199,9 @@ class VisualMarginGenerator:
                     chunk = response.content[0].text
                     generated_text += chunk
 
-                    # Update tracker with new content
-                    self.tracker.update_with_token(chunk)
+                    # Update tracker with new content and actual token count
+                    token_count = response.usage.output_tokens if response.usage else None
+                    self.tracker.update_with_token(chunk, token_count=token_count)
                 else:
                     # No more content generated
                     break
