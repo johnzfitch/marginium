@@ -2,7 +2,6 @@
 Tests for MarginRenderer
 """
 
-import pytest
 from PIL import Image
 from visual_margin_system.margin_renderer import MarginRenderer
 
