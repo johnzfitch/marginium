@@ -133,3 +133,4 @@ class TestMarginRenderer:
         # Test unsatisfied state (far from target)
         color = renderer._get_constraint_color(state_unsatisfied, 'lines', {'target': 4})
         # Should be unsatisfied
+        assert color == renderer.colors['unsatisfied']
