@@ -36,15 +36,16 @@ class GenerationStateTracker:
         self.constraints = constraints
         self.constraint_status = {key: False for key in constraints.keys()}
 
-    def update_with_token(self, token: str) -> None:
+    def update_with_token(self, token: str, token_count: Optional[int] = None) -> None:
         """
         Update all state based on newly generated token.
 
         Args:
             token: The newly generated token/text chunk
+            token_count: Actual number of tokens in the chunk (if None, defaults to 1 for backward compatibility)
         """
         self._generated_text += token
-        self.total_tokens += 1
+        self.total_tokens += token_count if token_count is not None else 1
         self.total_chars += len(token)
 
         # Process the token character by character to detect line breaks

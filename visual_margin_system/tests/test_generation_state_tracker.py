@@ -143,3 +143,37 @@ class TestGenerationStateTracker:
         assert 'constraints' in state
         assert 'constraint_status' in state
         assert 'generation_complete' in state
+
+    def test_token_counting_with_explicit_count(self):
+        """Test token counting with explicit token count parameter."""
+        tracker = GenerationStateTracker()
+        
+        # Simulate passing actual token counts from API
+        tracker.update_with_token("This is a chunk", token_count=5)
+        assert tracker.total_tokens == 5
+        
+        tracker.update_with_token(" of text.", token_count=3)
+        assert tracker.total_tokens == 8
+        
+        # Test backward compatibility - when no token_count is provided
+        tracker.update_with_token(" More text", token_count=None)
+        assert tracker.total_tokens == 9  # Should increment by 1 for backward compatibility
+
+    def test_token_counting_accuracy_with_chunks(self):
+        """Test that token counting is accurate when using chunked generation."""
+        tracker = GenerationStateTracker()
+        
+        # Simulate a scenario where chunk_size=50 tokens per API call
+        # This is a chunk of text that the API says contains 50 tokens
+        chunk1 = "This is a fairly long piece of text that contains multiple words and sentences."
+        tracker.update_with_token(chunk1, token_count=50)
+        
+        chunk2 = "And here's another chunk that also contains substantial text content."
+        tracker.update_with_token(chunk2, token_count=45)
+        
+        # Total tokens should be sum of actual token counts, not number of chunks
+        assert tracker.total_tokens == 95
+        
+        # But character and word counts should be based on actual text
+        assert tracker.total_chars == len(chunk1 + chunk2)
+        assert tracker.total_words == len((chunk1 + chunk2).split())
