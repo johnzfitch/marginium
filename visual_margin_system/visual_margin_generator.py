@@ -115,12 +115,7 @@ class VisualMarginGenerator:
                     self.tracker.update_with_token(chunk)
                     
                     # Deduct tokens from remaining budget
-                    # Use the actual tokens returned if available, otherwise estimate
-                    if hasattr(response, 'usage') and hasattr(response.usage, 'output_tokens'):
-                        tokens_used = response.usage.output_tokens
-                    else:
-                        # Rough estimate: count tokens as words (conservative)
-                        tokens_used = len(chunk.split())
+                    tokens_used = self._estimate_token_usage(response, chunk)
                     remaining_tokens -= tokens_used
                 else:
                     # No more content generated
@@ -213,12 +208,7 @@ class VisualMarginGenerator:
                     self.tracker.update_with_token(chunk)
                     
                     # Deduct tokens from remaining budget
-                    # Use the actual tokens returned if available, otherwise estimate
-                    if hasattr(response, 'usage') and hasattr(response.usage, 'output_tokens'):
-                        tokens_used = response.usage.output_tokens
-                    else:
-                        # Rough estimate: count tokens as words (conservative)
-                        tokens_used = len(chunk.split())
+                    tokens_used = self._estimate_token_usage(response, chunk)
                     remaining_tokens -= tokens_used
                 else:
                     # No more content generated
@@ -294,6 +284,26 @@ Generate text while monitoring the margin to ensure you satisfy all constraints.
                 ]
             }
         ]
+
+    def _estimate_token_usage(self, response, chunk: str) -> int:
+        """
+        Estimate the number of tokens used in a response.
+        
+        Args:
+            response: API response object
+            chunk: Generated text chunk
+            
+        Returns:
+            Estimated token count
+        """
+        # Try to use actual token count from API response
+        if hasattr(response, 'usage') and hasattr(response.usage, 'output_tokens'):
+            return response.usage.output_tokens
+        
+        # Fallback: estimate based on word count
+        # Modern tokenizers typically produce 1.3-1.5 tokens per word for English text
+        word_count = len(chunk.split())
+        return int(word_count * 1.33)
 
     def get_state_snapshot(self) -> Dict[str, Any]:
         """
