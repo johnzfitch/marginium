@@ -120,6 +120,10 @@ class VisualMarginGenerator:
                     
                     # Deduct tokens from remaining budget (prevent negative)
                     tokens_used = self._estimate_token_usage(response, chunk)
+                    # Defensive: ensure tokens_used does not exceed tokens_to_request
+                    if tokens_used > tokens_to_request:
+                        print(f"Warning: tokens_used ({tokens_used}) > tokens_to_request ({tokens_to_request}). Capping to {tokens_to_request}.")
+                        tokens_used = tokens_to_request
                     remaining_tokens = max(0, remaining_tokens - tokens_used)
                 else:
                     # No more content generated
